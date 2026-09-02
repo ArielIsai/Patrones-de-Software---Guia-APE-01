@@ -1,7 +1,7 @@
 // biblioteca.js
 
-const LibraryService = require("./services/LibraryService");
-const ESTADOS = require("./constants/BookStatus");
+const LibraryService = require("./biblioteca/services/LibraryService");
+const ESTADOS = require("./biblioteca/constants/BookStatus");
 
 var libros = [
 
@@ -148,7 +148,7 @@ disponibilidad(1);
 
 console.log("\nPRESTAR:");
 
-libraryService.prestarLibro(1, "Carlos");
+console.log(libraryService.prestarLibro(1, "Carlos").mensaje);
 
 console.log("\nDISPONIBILIDAD DESPUÉS DEL PRÉSTAMO:");
 
@@ -156,7 +156,7 @@ disponibilidad(1);
 
 console.log("\nDEVOLVER:");
 
-libraryService.devolverLibro(1);
+console.log(libraryService.devolverLibro(1).mensaje);
 
 console.log("\nESTADO FINAL:");
 
