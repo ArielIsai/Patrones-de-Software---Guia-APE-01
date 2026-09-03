@@ -1,163 +1,79 @@
-// biblioteca.js
+const LibroRepository = require('./biblioteca/repositories/LibroRepository');
+const LibraryService = require('./biblioteca/services/LibraryService');
+const readline = require('readline');
 
-const LibraryService = require("./biblioteca/services/LibraryService");
-const ESTADOS = require("./biblioteca/constants/BookStatus");
+// Inicializar repositorio y servicio de negocio
+const libroRepository = new LibroRepository();
+const libraryService = new LibraryService(libroRepository.obtenerTodos());
 
-var libros = [
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-    {
-        id: 1,
-        titulo: "Clean Code",
-        autor: "Robert C. Martin",
-        estado: ESTADOS.DISPONIBLE,
-        usuario: ""
-    },
-
-    {
-        id: 2,
-        titulo: "Design Patterns",
-        autor: "Erich Gamma",
-        estado: ESTADOS.DISPONIBLE,
-        usuario: ""
-    },
-
-    {
-        id: 3,
-        titulo: "Refactoring",
-        autor: "Martin Fowler",
-        estado: ESTADOS.PRESTADO,
-        usuario: "Juan"
-    }
-
-];
-
-var libraryService = new LibraryService(libros);
-
-
-// BUSCAR LIBRO
-
-function buscar(x) {
-
-    var encontrado = false;
-
-    for (var i = 0; i < libros.length; i++) {
-
-        if (
-            libros[i].titulo.toLowerCase().includes(x.toLowerCase()) ||
-            libros[i].autor.toLowerCase().includes(x.toLowerCase())
-        ) {
-
-            console.log(
-                libros[i].id +
-                " - " +
-                libros[i].titulo +
-                " - " +
-                libros[i].autor
-            );
-
-            if (libros[i].estado == ESTADOS.DISPONIBLE) {
-                console.log("Disponible");
-            } else {
-                console.log("Prestado");
-            }
-
-            encontrado = true;
+function mostrarMenu() {
+    console.log("\n========================================");
+    console.log("     SISTEMA DE GESTIÓN DE BIBLIOTECA   ");
+    console.log("========================================");
+    console.log("1. Listar todos los libros");
+    console.log("2. Prestar un libro");
+    console.log("3. Devolver un libro");
+    console.log("4. Salir");
+    console.log("----------------------------------------");
+    
+    rl.question("Seleccione una opción: ", (opcion) => {
+        switch (opcion.trim()) {
+            case '1':
+                listarLibros();
+                break;
+            case '2':
+                prestarLibroPrompt();
+                break;
+            case '3':
+                devolverLibroPrompt();
+                break;
+            case '4':
+                console.log("\n¡Gracias por usar el sistema de biblioteca! Saliendo...");
+                rl.close();
+                break;
+            default:
+                console.log("\n[!] Opción inválida. Intente de nuevo.");
+                mostrarMenu();
+                break;
         }
-    }
-
-    if (encontrado == false) {
-        console.log("No se encontraron libros");
-    }
+    });
 }
 
-
-// VER DISPONIBILIDAD
-
-function disponibilidad(id) {
-
-    var x = null;
-
-    for (var i = 0; i < libros.length; i++) {
-
-        if (libros[i].id == id) {
-            x = libros[i];
-        }
-    }
-
-    if (x == null) {
-
-        console.log("Libro no encontrado");
-
-    } else {
-
-        if (x.estado == ESTADOS.DISPONIBLE) {
-
-            console.log(
-                "El libro " +
-                x.titulo +
-                " está disponible"
-            );
-
-        } else {
-
-            console.log(
-                "El libro " +
-                x.titulo +
-                " está prestado a " +
-                x.usuario
-            );
-        }
-    }
+function listarLibros() {
+    console.log("\n--- LISTADO DE LIBROS ---");
+    const libros = libroRepository.obtenerTodos();
+    libros.forEach(libro => {
+        const info = libro.obtenerInfoCompleta();
+        console.log(`ID: ${info.id} | Título: ${info.titulo} | Autor: ${info.autor} | Estado: ${info.estadoTexto} ${info.usuario ? `(Usuario: ${info.usuario})` : ''}`);
+    });
+    mostrarMenu();
 }
 
-
-// LISTAR TODOS LOS LIBROS
-
-function listar() {
-
-    console.log("---------- BIBLIOTECA ----------");
-
-    for (var i = 0; i < libros.length; i++) {
-
-        console.log(
-            libros[i].id +
-            " | " +
-            libros[i].titulo +
-            " | " +
-            libros[i].autor +
-            " | " +
-            libros[i].estado
-        );
-    }
-
-    console.log("-------------------------------");
+function prestarLibroPrompt() {
+    rl.question("\nIngrese el ID del libro a prestar: ", (idInput) => {
+        const id = parseInt(idInput);
+        rl.question("Ingrese el nombre del usuario: ", (nombre) => {
+            const resultado = libraryService.prestarLibro(id, nombre);
+            console.log("\n" + (resultado.exito ? "[ÉXITO]" : "[ERROR]") + " " + resultado.mensaje);
+            mostrarMenu();
+        });
+    });
 }
 
+function devolverLibroPrompt() {
+    rl.question("\nIngrese el ID del libro a devolver: ", (idInput) => {
+        const id = parseInt(idInput);
+        const resultado = libraryService.devolverLibro(id);
+        console.log("\n" + (resultado.exito ? "[ÉXITO]" : "[ERROR]") + " " + resultado.mensaje);
+        mostrarMenu();
+    });
+}
 
-// PRUEBAS MANUALES
-
-listar();
-
-console.log("\nBUSCAR:");
-
-buscar("Clean");
-
-console.log("\nDISPONIBILIDAD:");
-
-disponibilidad(1);
-
-console.log("\nPRESTAR:");
-
-console.log(libraryService.prestarLibro(1, "Carlos").mensaje);
-
-console.log("\nDISPONIBILIDAD DESPUÉS DEL PRÉSTAMO:");
-
-disponibilidad(1);
-
-console.log("\nDEVOLVER:");
-
-console.log(libraryService.devolverLibro(1).mensaje);
-
-console.log("\nESTADO FINAL:");
-
-disponibilidad(1);
+// Iniciar aplicación
+console.log("Iniciando Sistema Bibliotecario...");
+mostrarMenu();
