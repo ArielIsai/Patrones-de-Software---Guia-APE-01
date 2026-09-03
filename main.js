@@ -1,166 +1,79 @@
-// biblioteca.js
-var libros = [
-{
-id: 1,
-titulo: "Clean Code",
-autor: "Robert C. Martin",
-estado: "D",
-usuario: ""
-},
-{
-id: 2,
-titulo: "Design Patterns",
-autor: "Erich Gamma",
-estado: "D",
-usuario: ""
-},
-{
-id: 3,
-titulo: "Refactoring",
-autor: "Martin Fowler",
-estado: "P",
-usuario: "Juan"
+const LibroRepository = require('./biblioteca/repositories/LibroRepository');
+const LibraryService = require('./biblioteca/services/LibraryService');
+const readline = require('readline');
+
+// Inicializar repositorio y servicio de negocio
+const libroRepository = new LibroRepository();
+const libraryService = new LibraryService(libroRepository.obtenerTodos());
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+function mostrarMenu() {
+    console.log("\n========================================");
+    console.log("     SISTEMA DE GESTIÓN DE BIBLIOTECA   ");
+    console.log("========================================");
+    console.log("1. Listar todos los libros");
+    console.log("2. Prestar un libro");
+    console.log("3. Devolver un libro");
+    console.log("4. Salir");
+    console.log("----------------------------------------");
+    
+    rl.question("Seleccione una opción: ", (opcion) => {
+        switch (opcion.trim()) {
+            case '1':
+                listarLibros();
+                break;
+            case '2':
+                prestarLibroPrompt();
+                break;
+            case '3':
+                devolverLibroPrompt();
+                break;
+            case '4':
+                console.log("\n¡Gracias por usar el sistema de biblioteca! Saliendo...");
+                rl.close();
+                break;
+            default:
+                console.log("\n[!] Opción inválida. Intente de nuevo.");
+                mostrarMenu();
+                break;
+        }
+    });
 }
-];
-// BUSCAR LIBRO
-function buscar(x) {
-var encontrado = false;
-for (var i = 0; i < libros.length; i++) {
-if (
-libros[i].titulo.toLowerCase().includes(x.toLowerCase()) ||
-libros[i].autor.toLowerCase().includes(x.toLowerCase())
-) {
-console.log(
-libros[i].id +
-" - " +
-libros[i].titulo +
-" - " +
-libros[i].autor
-);
-if (libros[i].estado == "D") {
-console.log("Disponible");
-} else {
-console.log("Prestado");
+
+function listarLibros() {
+    console.log("\n--- LISTADO DE LIBROS ---");
+    const libros = libroRepository.obtenerTodos();
+    libros.forEach(libro => {
+        const info = libro.obtenerInfoCompleta();
+        console.log(`ID: ${info.id} | Título: ${info.titulo} | Autor: ${info.autor} | Estado: ${info.estadoTexto} ${info.usuario ? `(Usuario: ${info.usuario})` : ''}`);
+    });
+    mostrarMenu();
 }
-encontrado = true;
+
+function prestarLibroPrompt() {
+    rl.question("\nIngrese el ID del libro a prestar: ", (idInput) => {
+        const id = parseInt(idInput);
+        rl.question("Ingrese el nombre del usuario: ", (nombre) => {
+            const resultado = libraryService.prestarLibro(id, nombre);
+            console.log("\n" + (resultado.exito ? "[ÉXITO]" : "[ERROR]") + " " + resultado.mensaje);
+            mostrarMenu();
+        });
+    });
 }
+
+function devolverLibroPrompt() {
+    rl.question("\nIngrese el ID del libro a devolver: ", (idInput) => {
+        const id = parseInt(idInput);
+        const resultado = libraryService.devolverLibro(id);
+        console.log("\n" + (resultado.exito ? "[ÉXITO]" : "[ERROR]") + " " + resultado.mensaje);
+        mostrarMenu();
+    });
 }
-if (encontrado == false) {
-console.log("No se encontraron libros");
-}
-}
-// VER DISPONIBILIDAD
-function disponibilidad(id) {
-var x = null;
-for (var i = 0; i < libros.length; i++) {
-if (libros[i].id == id) {
-x = libros[i];
-}
-}
-if (x == null) {
-console.log("Libro no encontrado");
-} else {
-if (x.estado == "D") {
-console.log(
-"El libro " +
-x.titulo +
-" está disponible"
-);
-} else {
-console.log(
-"El libro " +
-x.titulo +
-" está prestado a " +
-x.usuario
-);
-}
-}
-}
-// RENTAR / PRESTAR LIBRO
-function rentar(id, nombre) {
-var libro = null;
-for (var i = 0; i < libros.length; i++) {
-if (libros[i].id == id) {
-libro = libros[i];
-}
-}
-if (libro == null) {
-console.log("Libro no encontrado");
-} else {
-if (nombre == null || nombre == "") {
-console.log("Debe ingresar el nombre del usuario");
-} else {
-if (libro.estado == "D") {
-libro.estado = "P";
-libro.usuario = nombre;
-console.log(
-"El libro " +
-libro.titulo +
-" fue prestado correctamente a " +
-nombre
-);
-} else {
-console.log(
-"No se puede prestar el libro porque ya está prestado"
-);
-}
-}
-}
-}
-// DEVOLVER LIBRO
-function devolver(id) {
-var libro = null;
-for (var i = 0; i < libros.length; i++) {
-if (libros[i].id == id) {
-libro = libros[i];
-}
-}
-if (libro == null) {
-console.log("Libro no encontrado");
-} else {
-if (libro.estado == "P") {
-console.log(
-"Devolución realizada. Libro: " +
-libro.titulo +
-". Usuario anterior: " +
-libro.usuario
-);
-libro.estado = "D";
-libro.usuario = "";
-} else {
-console.log(
-"El libro no puede devolverse porque ya está disponible"
-);
-}
-}
-}
-// LISTAR TODOS LOS LIBROS
-function listar() {
-console.log("---------- BIBLIOTECA ----------");
-for (var i = 0; i < libros.length; i++) {
-console.log(
-libros[i].id +
-" | " +
-libros[i].titulo +
-" | " +
-libros[i].autor +
-" | " +
-libros[i].estado
-);
-}
-console.log("-------------------------------");
-}
-// PRUEBAS MANUALES
-listar();
-console.log("\nBUSCAR:");
-buscar("Clean");
-console.log("\nDISPONIBILIDAD:");
-disponibilidad(1);
-console.log("\nPRESTAR:");
-rentar(1, "Carlos");
-console.log("\nDISPONIBILIDAD DESPUÉS DEL PRÉSTAMO:");
-disponibilidad(1);
-console.log("\nDEVOLVER:");
-devolver(1);
-console.log("\nESTADO FINAL:");
-disponibilidad(1);
+
+// Iniciar aplicación
+console.log("Iniciando Sistema Bibliotecario...");
+mostrarMenu();
